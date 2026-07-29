@@ -5,7 +5,6 @@ import replicate
 
 app = Flask(__name__)
 
-# Replicate API Key check
 REPLICATE_API_TOKEN = os.environ.get("REPLICATE_API_TOKEN")
 
 @app.route('/')
@@ -19,15 +18,14 @@ def generate_video():
         
     data = request.json
     image_url = data.get('image_url')
-    prompt = data.get('prompt', 'Animate this image smoothly')
 
     if not image_url:
         return jsonify({'error': 'Image URL required!'}), 400
 
     try:
-        # Stable Video Diffusion model call
+        # Standard Stable Video Diffusion model format
         output = replicate.run(
-            "stability-ai/stable-video-diffusion:3f0457e4619da25d21e6fb38810f4e314ed1940e278b171daf24812735e3134f",
+            "stability-ai/stable-video-diffusion",
             input={
                 "input_image": image_url,
                 "motion_bucket_id": 127,
