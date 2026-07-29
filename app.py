@@ -1,5 +1,5 @@
 import os
-import time
+import base64
 from flask import Flask, render_template, request, jsonify
 import replicate
 
@@ -14,25 +14,28 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate_video():
     if not REPLICATE_API_TOKEN:
-        return jsonify({'error': 'API key not configured on server'}), 500
+        return jsonify({'error': 'Replicate API key not set on Render!'}), 500
         
     data = request.json
-    image_url = data.get('image_url')
+    image_data = data.get('image_data') # Base64 string from gallery
+    prompt = data.get('prompt', 'Animate this image smoothly in high quality')
 
-    if not image_url:
-        return jsonify({'error': 'Image URL required!'}), 400
+    if not image_data:
+        return jsonify({'error': 'Please select an image!'}), 400
 
     try:
-        # Standard Stable Video Diffusion model format
+        # Running Minimax Video-01 Model (Supports Image + Text Prompt)
         output = replicate.run(
-            "stability-ai/stable-video-diffusion",
+            "minimax/video-01",
             input={
-                "input_image": image_url,
-                "motion_bucket_id": 127,
-                "cond_aug": 0.02
+                "first_frame_image": image_data,
+                "prompt": prompt
             }
         )
-        return jsonify({'video_url': output})
+        
+        # If output is FileOutput object or URL
+        video_url = output.url if hasattr(output, 'url') else str(output)
+        return jsonify({'video_url': video_url})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

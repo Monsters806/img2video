@@ -5,54 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Image to Video Converter</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 90%; max-width: 450px; text-align: center; }
-        h2 { color: #38bdf8; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #0284c7; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .card { background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); width: 100%; max-width: 480px; text-align: center; }
+        h2 { color: #38bdf8; margin-top: 0; margin-bottom: 20px; }
+        label { display: block; text-align: left; font-size: 14px; color: #94a3b8; margin: 10px 0 5px; }
+        input[type="file"], input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; margin-bottom: 15px; font-size: 14px; }
+        #preview { max-width: 100%; max-height: 180px; border-radius: 8px; display: none; margin: 10px auto; }
+        button { width: 100%; padding: 14px; background: #0284c7; border: none; color: white; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #0369a1; }
-        #status { margin-top: 15px; font-size: 14px; color: #94a3b8; }
-        video { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
+        #status { margin-top: 15px; font-size: 14px; color: #f1f5f9; word-break: break-word; }
+        video { width: 100%; border-radius: 10px; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Image to Video Generator</h2>
-    <input type="text" id="imgUrl" placeholder="Direct Image URL (e.g. https://...jpg)">
+    <h2>AI Image to Video</h2>
+    
+    <label>1. Select Image from Gallery:</label>
+    <input type="file" id="imgFile" accept="image/*" onchange="previewImage()">
+    <img id="preview" alt="Image Preview">
+
+    <label>2. Animation Prompt (Optional):</label>
+    <input type="text" id="promptInput" placeholder="e.g. A boy running in slow motion, cinematic lighting">
+
     <button onclick="generateVideo()">Generate Video</button>
     <div id="status"></div>
     <video id="videoResult" controls autoplay loop></video>
 </div>
 
 <script>
+let base64Image = "";
+
+function previewImage() {
+    const file = document.getElementById('imgFile').files[0];
+    const preview = document.getElementById('preview');
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            base64Image = reader.result;
+            preview.src = reader.result;
+            preview.style.display = "block";
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
 async function generateVideo() {
-    const url = document.getElementById('imgUrl').value;
     const status = document.getElementById('status');
     const video = document.getElementById('videoResult');
+    const prompt = document.getElementById('promptInput').value;
     
-    if(!url) { alert('Please enter an image URL!'); return; }
+    if(!base64Image) { 
+        alert('Please choose an image from your device first!'); 
+        return; 
+    }
 
-    status.innerText = "Generating video... Please wait (1-2 minutes)";
+    status.innerText = "Generating video... Please wait (takes 1-2 minutes)";
     video.style.display = "none";
 
     try {
         const response = await fetch('/generate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ image_url: url })
+            body: JSON.stringify({ image_data: base64Image, prompt: prompt })
         });
         const data = await response.json();
 
         if(data.video_url) {
-            status.innerText = "Done!";
+            status.innerText = "✨ Video Generated Successfully!";
             video.src = data.video_url;
             video.style.display = "block";
         } else {
-            status.innerText = "Error: " + (data.error || "Failed");
+            status.innerText = "Error: " + (data.error || "Failed to generate video");
         }
     } catch (err) {
-        status.innerText = "Server error, check back end logs.";
+        status.innerText = "Server connection error, please try again.";
     }
 }
 </script>
