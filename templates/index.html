@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image to Video Converter</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 90%; max-width: 450px; text-align: center; }
+        h2 { color: #38bdf8; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0284c7; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #0369a1; }
+        #status { margin-top: 15px; font-size: 14px; color: #94a3b8; }
+        video { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Image to Video Generator</h2>
+    <input type="text" id="imgUrl" placeholder="Direct Image URL (e.g. https://...jpg)">
+    <button onclick="generateVideo()">Generate Video</button>
+    <div id="status"></div>
+    <video id="videoResult" controls autoplay loop></video>
+</div>
+
+<script>
+async function generateVideo() {
+    const url = document.getElementById('imgUrl').value;
+    const status = document.getElementById('status');
+    const video = document.getElementById('videoResult');
+    
+    if(!url) { alert('Please enter an image URL!'); return; }
+
+    status.innerText = "Generating video... Please wait (1-2 minutes)";
+    video.style.display = "none";
+
+    try {
+        const response = await fetch('/generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ image_url: url })
+        });
+        const data = await response.json();
+
+        if(data.video_url) {
+            status.innerText = "Done!";
+            video.src = data.video_url;
+            video.style.display = "block";
+        } else {
+            status.innerText = "Error: " + (data.error || "Failed");
+        }
+    } catch (err) {
+        status.innerText = "Server error, check back end logs.";
+    }
+}
+</script>
+
+</body>
+</html>
